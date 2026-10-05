@@ -20,7 +20,7 @@ if (!TOKEN) {
   process.exit(1);
 }
 
-const cabeceras = { Authorization: TOKEN, 'User-Agent': 'DrakesCraft-Labs/publicador' };
+const cabeceras = { Authorization: TOKEN, 'User-Agent': 'SlimefunNewHorizons/publicador' };
 
 async function pedir(url, opciones = {}) {
   const r = await fetch(url, { ...opciones, headers: { ...cabeceras, ...(opciones.headers || {}) } });
@@ -77,8 +77,8 @@ if (!proyecto) {
     license_id: process.env.PROJECT_LICENSE || 'GPL-3.0-only',
 <<<<<<< HEAD
 =======
-    source_url: `https://github.com/DrakesCraft-Labs/${SLUG}`,
-    issues_url: `https://github.com/DrakesCraft-Labs/${SLUG}/issues`,
+    source_url: `https://github.com/SlimefunNewHorizons/${SLUG}`,
+    issues_url: `https://github.com/SlimefunNewHorizons/${SLUG}/issues`,
     discord_url: 'https://discord.gg/rR7FbfCt9Y',
 >>>>>>> 37d4e8d (ci: actualizar modrinth-publish y declaraciones de contenido (Modrinth 2.1, 5.9, 4, 6.2a))
     initial_versions: [],
@@ -136,8 +136,8 @@ try {
 // --- Declaraciones de Contenido & Metadatos (Sección 5.9 y 4) -----------------------------
 try {
   const patchData = {
-    source_url: `https://github.com/DrakesCraft-Labs/${SLUG}`,
-    issues_url: `https://github.com/DrakesCraft-Labs/${SLUG}/issues`,
+    source_url: `https://github.com/SlimefunNewHorizons/${SLUG}`,
+    issues_url: `https://github.com/SlimefunNewHorizons/${SLUG}/issues`,
     discord_url: 'https://discord.gg/rR7FbfCt9Y'
   };
   await fetch(`${V2}/project/${proyecto.id}`, {
