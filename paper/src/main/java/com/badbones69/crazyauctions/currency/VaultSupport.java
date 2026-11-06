@@ -40,6 +40,16 @@ public class VaultSupport {
         return result.transactionSuccess();
     }
 
+    /** Paga en la modalidad del mundo indicado, aunque el jugador este en otra o desconectado. */
+    public boolean addMoney(OfflinePlayer player, String world, long amount) {
+        return this.vault.depositPlayer(player, world, amount).transactionSuccess();
+    }
+
+    /** Cobra en la modalidad del mundo indicado, aunque el jugador este en otra o desconectado. */
+    public boolean removeMoney(OfflinePlayer player, String world, long amount) {
+        return this.vault.withdrawPlayer(player, world, amount).transactionSuccess();
+    }
+
     public boolean addMoney(Player player, long amount) {
         EconomyResponse result = this.vault.depositPlayer(player, amount);
         return result.transactionSuccess();

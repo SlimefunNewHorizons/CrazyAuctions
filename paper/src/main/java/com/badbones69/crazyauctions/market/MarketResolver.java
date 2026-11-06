@@ -70,6 +70,15 @@ public final class MarketResolver {
         return resolve(worldName).map(market::equals).orElse(false);
     }
 
+    /** Un mundo del mercado, para mover dinero en su modalidad aunque las partes esten fuera. */
+    public Optional<String> world(@NotNull String market) {
+        String normalized = normalize(market);
+        return this.worldMarkets.entrySet().stream()
+                .filter(entry -> entry.getValue().equals(normalized))
+                .map(Map.Entry::getKey)
+                .findFirst();
+    }
+
     public String legacyMarket() {
         return this.legacyMarket;
     }

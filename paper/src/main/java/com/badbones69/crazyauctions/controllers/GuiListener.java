@@ -1235,7 +1235,7 @@ public class GuiListener implements Listener {
                                         return;
                                     }
 
-                                    support.addMoney(Methods.getOfflinePlayer(seller), cost);
+                                    support.addMoney(Methods.getOfflinePlayer(seller), player.getWorld().getName(), cost);
 
                                     String price = Methods.getPrice(ID, false);
 

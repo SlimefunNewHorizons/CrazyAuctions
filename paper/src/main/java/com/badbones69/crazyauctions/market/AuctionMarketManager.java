@@ -89,6 +89,12 @@ public final class AuctionMarketManager {
         data.set(to + ".Market", listingMarket(data, from));
     }
 
+    /** Mundo de referencia del mercado de una publicacion. */
+    public String world(@NotNull FileConfiguration data, @NotNull String path) {
+        String market = data.getString(path + ".Market", this.resolver.legacyMarket());
+        return this.resolver.world(market).orElse("world");
+    }
+
     public boolean matches(@NotNull Player player, @NotNull FileConfiguration data, @NotNull String path) {
         if (!this.enabled) {
             return true;
