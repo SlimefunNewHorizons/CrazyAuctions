@@ -1,10 +1,7 @@
-<<<<<<< HEAD
-=======
 // Se asegura de que el proyecto exista en Modrinth, DENTRO DE LA ORGANIZACION, y devuelve su id.
 // Cumple con las normativas 2.1 (galeria e imagenes destacadas con titulo), 5.9 y 4 (declaracion de fuentes y licencias)
 // y 6.2a (recursos vectoriales limpios sin IA generativa).
 
->>>>>>> 37d4e8d (ci: actualizar modrinth-publish y declaraciones de contenido (Modrinth 2.1, 5.9, 4, 6.2a))
 import { appendFileSync, existsSync, readFileSync } from 'fs';
 
 const V2 = 'https://api.modrinth.com/v2';
@@ -12,7 +9,7 @@ const V3 = 'https://api.modrinth.com/v3';
 const TOKEN = process.env.MODRINTH_TOKEN;
 const SLUG = (process.env.PROJECT_SLUG || '').toLowerCase();
 const NOMBRE = process.env.PROJECT_NAME || SLUG;
-const RESUMEN = (process.env.PROJECT_SUMMARY || 'Addon de Slimefun4 para Paper 1.21.11.').slice(0, 256);
+const RESUMEN = (process.env.PROJECT_SUMMARY || 'CrazyAuctions - High performance Paper 1.21.11 expansion for Slimefun4.').slice(0, 256);
 const ORG_PEDIDA = process.env.MODRINTH_ORG || '';
 
 if (!TOKEN) {
@@ -27,12 +24,14 @@ async function pedir(url, opciones = {}) {
   return r;
 }
 
+/** El proyecto si existe, o null. */
 async function buscarProyecto(idOslug) {
   if (!idOslug) return null;
   const r = await pedir(`${V2}/project/${encodeURIComponent(idOslug)}`);
   return r.status === 200 ? await r.json() : null;
 }
 
+/** La organizacion donde deben vivir los proyectos, o null si no se puede determinar. */
 async function resolverOrganizacion() {
   if (ORG_PEDIDA) {
     const r = await pedir(`${V3}/organization/${encodeURIComponent(ORG_PEDIDA)}`);
@@ -53,6 +52,8 @@ async function resolverOrganizacion() {
 const organizacion = await resolverOrganizacion();
 if (organizacion) {
   console.log(`Organizacion destino: ${organizacion.name || organizacion.slug} (${organizacion.id})`);
+} else {
+  console.log('Sin organizacion resuelta; el proyecto quedara bajo el usuario del token.');
 }
 
 let proyecto = (await buscarProyecto(process.env.MODRINTH_PROJECT_ID)) || (await buscarProyecto(SLUG));
@@ -69,18 +70,15 @@ if (!proyecto) {
     title: NOMBRE,
     description: RESUMEN,
     body: cuerpo,
-    categories: ['utility'],
+    categories: ['utility', 'technology', 'storage'],
     client_side: 'unsupported',
     server_side: 'required',
     project_type: 'mod',
     is_draft: true,
     license_id: process.env.PROJECT_LICENSE || 'GPL-3.0-only',
-<<<<<<< HEAD
-=======
     source_url: `https://github.com/SlimefunNewHorizons/${SLUG}`,
     issues_url: `https://github.com/SlimefunNewHorizons/${SLUG}/issues`,
-    discord_url: 'https://discord.gg/rR7FbfCt9Y',
->>>>>>> 37d4e8d (ci: actualizar modrinth-publish y declaraciones de contenido (Modrinth 2.1, 5.9, 4, 6.2a))
+    discord_url: 'https://discord.gg/6M8cz86vN7',
     initial_versions: [],
   };
 
@@ -96,7 +94,7 @@ if (!proyecto) {
   console.log(`Proyecto creado como BORRADOR: ${proyecto.slug} (${proyecto.id})`);
 }
 
-// Trasladar a la organizacion si procede
+// Trasladarlo a la organizacion si aun no pertenece a ella.
 if (organizacion && proyecto.organization !== organizacion.id) {
   const r = await pedir(`${V3}/organization/${organizacion.id}/projects`, {
     method: 'POST',
@@ -105,6 +103,8 @@ if (organizacion && proyecto.organization !== organizacion.id) {
   });
   if (r.ok) {
     console.log(`Proyecto trasladado a la organizacion ${organizacion.slug}.`);
+  } else {
+    console.error(`No se pudo trasladar a la organizacion (HTTP ${r.status}): ${(await r.text()).slice(0, 300)}`);
   }
 }
 
@@ -114,31 +114,12 @@ if (process.env.GITHUB_OUTPUT) {
 }
 console.log(`Proyecto en uso: ${proyecto.slug} (${proyecto.id})`);
 
-<<<<<<< HEAD
-// --- Icono del proyecto (PNG obligatorio para Modrinth) -------------------------------
-try {
-  let rutaIcono = null;
-  if (existsSync('docs/icon.png')) rutaIcono = 'docs/icon.png';
-  else if (existsSync('icon.png')) rutaIcono = 'icon.png';
-
-  if (rutaIcono) {
-    const png = readFileSync(rutaIcono);
-    const r = await fetch(`${V2}/project/${proyecto.id}/icon?ext=png`, {
-      method: 'PATCH',
-      headers: { ...cabeceras, 'Content-Type': 'image/png' },
-      body: png,
-    });
-    if (r.ok) {
-      console.log(`Icono PNG subido con exito (${rutaIcono}).`);
-    } else {
-      console.error(`No se pudo subir el icono (HTTP ${r.status}): ${(await r.text()).slice(0, 200)}`);
-=======
 // --- Declaraciones de Contenido & Metadatos (Sección 5.9 y 4) -----------------------------
 try {
   const patchData = {
     source_url: `https://github.com/SlimefunNewHorizons/${SLUG}`,
     issues_url: `https://github.com/SlimefunNewHorizons/${SLUG}/issues`,
-    discord_url: 'https://discord.gg/rR7FbfCt9Y'
+    discord_url: 'https://discord.gg/6M8cz86vN7'
   };
   await fetch(`${V2}/project/${proyecto.id}`, {
     method: 'PATCH',
@@ -176,43 +157,12 @@ try {
       } else {
         console.error(`No se pudo subir el icono (HTTP ${r.status}): ${(await r.text()).slice(0, 200)}`);
       }
->>>>>>> 37d4e8d (ci: actualizar modrinth-publish y declaraciones de contenido (Modrinth 2.1, 5.9, 4, 6.2a))
     }
   }
 } catch (e) {
   console.error('Fallo al subir el icono:', e.message);
 }
 
-<<<<<<< HEAD
-// --- Galeria / Banner (GIF o PNG) ------------------------------------------------------
-try {
-  let rutaBanner = null;
-  let extBanner = 'png';
-  if (existsSync('.modrinth/banner.gif')) {
-    rutaBanner = '.modrinth/banner.gif';
-    extBanner = 'gif';
-  } else if (existsSync('docs/banner.png')) {
-    rutaBanner = 'docs/banner.png';
-    extBanner = 'png';
-  }
-
-  if (rutaBanner && (!proyecto.gallery || proyecto.gallery.length === 0)) {
-    const bannerBytes = readFileSync(rutaBanner);
-    const r = await fetch(`${V2}/project/${proyecto.id}/gallery?ext=${extBanner}&featured=true&title=Banner`, {
-      method: 'POST',
-      headers: { ...cabeceras, 'Content-Type': extBanner === 'gif' ? 'image/gif' : 'image/png' },
-      body: bannerBytes,
-    });
-    if (r.ok) {
-      console.log(`Banner subido a la galeria (${rutaBanner}).`);
-    }
-  }
-} catch (e) {
-  console.error('Fallo al subir banner a la galeria:', e.message);
-}
-
-// --- Descripcion larga (README saneado) -------------------------------------------------
-=======
 // --- Galeria de Imagenes & Imagen Destacada (Sección 2.1) ---------------------------------
 try {
   const galeriaActual = Array.isArray(proyecto.gallery) ? proyecto.gallery : [];
@@ -242,17 +192,17 @@ try {
 }
 
 // --- Descripcion larga sincronizada con README -------------------------------------------
->>>>>>> 37d4e8d (ci: actualizar modrinth-publish y declaraciones de contenido (Modrinth 2.1, 5.9, 4, 6.2a))
 try {
   if (existsSync('README.md')) {
-    let cuerpo = readFileSync('README.md', 'utf8');
+    const cuerpo = readFileSync('README.md', 'utf8');
     if (cuerpo.trim() && cuerpo !== proyecto.body) {
       const r = await fetch(`${V2}/project/${proyecto.id}`, {
         method: 'PATCH',
         headers: { ...cabeceras, 'Content-Type': 'application/json' },
         body: JSON.stringify({ body: cuerpo }),
       });
-      console.log(r.ok ? 'Descripcion sincronizada con el README.' : `Fallo al sincronizar descripcion (HTTP ${r.status}).`);
+      console.log(r.ok ? 'Descripcion sincronizada con el README.'
+                       : `No se pudo actualizar la descripcion (HTTP ${r.status}).`);
     }
   }
 } catch (e) {
