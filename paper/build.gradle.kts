@@ -26,6 +26,7 @@ dependencies {
 
     compileOnly(libs.paper)
 
+    testImplementation(libs.paper)
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
 }
 

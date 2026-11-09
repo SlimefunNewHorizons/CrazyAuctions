@@ -72,7 +72,6 @@ class FeePolicyTest {
     void sinNaNNiDesbordamiento() {
         FeePolicy p = new FeePolicy(true, Double.NaN, 100, 0, 0, true, "", true, "en");
         assertEquals(0, p.commission(1000, false));
-        assertEquals(Long.MAX_VALUE / 100 * 100 > 0, true);
         assertEquals("en", p.lang);
         assertEquals(Long.MAX_VALUE, p.listingFee(Long.MAX_VALUE, false));
     }
