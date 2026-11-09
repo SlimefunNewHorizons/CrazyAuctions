@@ -20,6 +20,10 @@ permissions:
   crazyauctions.access:
     default: true
 
+  crazyauctions.fee.exempt:
+    description: Exento de tasa de publicacion y comision de venta.
+    default: false
+
   crazyauctions.test:
     default: op
 

@@ -280,14 +280,10 @@ public class Methods {
 
                     for (; data.contains("OutOfTime/Cancelled." + num); num++) ;
 
-                    if (data.getBoolean("Items." + i + ".Biddable") && !data.getString("Items." + i + ".TopBidder").equalsIgnoreCase("None") && plugin.getSupport().getMoney(getPlayer(data.getString("Items." + i + ".TopBidder"))) >= data.getInt("Items." + i + ".Price")) {
+                    if (data.getBoolean("Items." + i + ".Biddable") && !data.getString("Items." + i + ".TopBidder").equalsIgnoreCase("None") && plugin.getSupport().getMoney(getPlayer(data.getString("Items." + i + ".TopBidder"))) >= data.getInt("Items." + i + ".Price") && payBid(data, i)) {
                         String winner = data.getString("Items." + i + ".TopBidder");
                         String seller = data.getString("Items." + i + ".Seller");
                         long price = data.getLong("Items." + i + ".Price");
-
-                        String world = plugin.getMarketManager().world(data, "Items." + i);
-                        plugin.getSupport().addMoney(getOfflinePlayer(seller), world, price);
-                        plugin.getSupport().removeMoney(getOfflinePlayer(winner), world, price);
 
                         HashMap<String, String> placeholders = new HashMap<>();
                         placeholders.put("%Price%", getPrice(i, false));
@@ -345,6 +341,29 @@ public class Methods {
         if (shouldSave) Files.data.save();
     }
     
+    /** Cobra al ganador y paga al vendedor (menos comision). false = nada cambio de manos. */
+    private static boolean payBid(FileConfiguration data, String i) {
+        final String winner = data.getString("Items." + i + ".TopBidder");
+        final String seller = data.getString("Items." + i + ".Seller");
+        final long price = data.getLong("Items." + i + ".Price");
+        final String world = plugin.getMarketManager().world(data, "Items." + i);
+        final var fees = plugin.getFees();
+
+        synchronized (com.badbones69.crazyauctions.fees.FeeService.LOCK) {
+            if (!plugin.getSupport().removeMoney(getOfflinePlayer(winner), world, price)) return false;
+
+            long net = fees.settle(getOfflinePlayer(seller), getPlayer(seller),
+                    data.getBoolean("Items." + i + ".FeeExempt"), world, price, data.getString("Items." + i + ".SellerName", seller));
+
+            if (net < 0) {
+                plugin.getSupport().addMoney(getOfflinePlayer(winner), world, price);
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public static String getPrice(String ID, Boolean Expired) {
         long price = 0L;
 

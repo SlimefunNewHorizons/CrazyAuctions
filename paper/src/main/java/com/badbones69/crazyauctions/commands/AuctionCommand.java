@@ -6,6 +6,9 @@ import com.badbones69.crazyauctions.api.CrazyManager;
 import com.badbones69.crazyauctions.api.enums.*;
 import com.badbones69.crazyauctions.api.events.AuctionCancelledEvent;
 import com.badbones69.crazyauctions.api.events.AuctionListEvent;
+import com.badbones69.crazyauctions.fees.FeePolicy;
+import com.badbones69.crazyauctions.fees.FeeService;
+import com.badbones69.crazyauctions.fees.FeeText;
 import com.badbones69.crazyauctions.controllers.GuiListener;
 import com.badbones69.crazyauctions.market.AuctionMarketManager;
 import com.badbones69.crazyauctions.market.ListingRules;
@@ -34,6 +37,7 @@ public class AuctionCommand implements CommandExecutor {
     private final FileManager fileManager = this.plugin.getFileManager();
 
     private final AuctionMarketManager marketManager = this.plugin.getMarketManager();
+    private final FeeService fees = this.plugin.getFees();
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String commandLabel, String[] args) {
@@ -364,14 +368,43 @@ public class AuctionCommand implements CommandExecutor {
                             return true;
                         }*/
 
+                        final FeePolicy feePolicy = this.fees.policy();
+                        final long listFee = feePolicy.listingFee(price, FeeService.isExempt(player));
+                        final Map<String, String> feePh = new HashMap<>();
+                        feePh.put("%fee%", String.valueOf(listFee));
+                        feePh.put("%pct%", String.valueOf(feePolicy.commissionPercent));
+                        feePh.put("%net%", String.valueOf(feePolicy.netToSeller(price, FeeService.isExempt(player))));
+
+                        if (listFee > 0) {
+                            if (feePolicy.confirmListing && !this.fees.consumeConfirmation(player.getUniqueId(),
+                                    args[0].toLowerCase() + "|" + price + "|" + amount + "|" + item.getType())) {
+                                player.sendMessage(FeeText.get(feePolicy, "listing-confirm", feePh));
+
+                                return true;
+                            }
+
+                            synchronized (FeeService.LOCK) {
+                                if (!this.fees.charge(player, listFee)) {
+                                    player.sendMessage(FeeText.get(feePolicy, "listing-need-money", feePh));
+
+                                    return true;
+                                }
+                            }
+                        }
+
                         String seller = player.getUniqueId().toString();
 
                         int num = 1;
+                        ShopType type;
+                        ItemStack stack;
+
+                        try {
 
                         for (; data.contains("Items." + num); num++) ;
                         data.set("Items." + num + ".Price", price);
                         data.set("Items." + num + ".Seller", seller);
                         data.set("Items." + num + ".SellerName", player.getName());
+                        data.set("Items." + num + ".FeeExempt", FeeService.isExempt(player));
                         this.marketManager.stamp(data, "Items." + num, player);
 
                         if (args[0].equalsIgnoreCase("bid")) {
@@ -392,7 +425,7 @@ public class AuctionCommand implements CommandExecutor {
                             if (data.getInt("Items." + i + ".StoreID") == id) id = ThreadLocalRandom.current().nextInt(Integer.MAX_VALUE);
 
                         data.set("Items." + num + ".StoreID", id);
-                        ShopType type = ShopType.SELL;
+                        type = ShopType.SELL;
 
                         if (args[0].equalsIgnoreCase("bid")) {
                             data.set("Items." + num + ".Biddable", true);
@@ -404,12 +437,27 @@ public class AuctionCommand implements CommandExecutor {
                         data.set("Items." + num + ".TopBidder", "None");
                         data.set("Items." + num + ".TopBidderName", "None");
 
-                        ItemStack stack = item.clone();
+                        stack = item.clone();
                         stack.setAmount(amount);
 
                         data.set("Items." + num + ".Item", Methods.toBase64(stack));
 
                         Files.data.save();
+                        } catch (RuntimeException ex) {
+                            data.set("Items." + num, null);
+                            this.fees.refund(player, listFee);
+                            this.plugin.getLogger().warning("Listado fallido, tasa devuelta: " + ex);
+                            player.sendMessage(FeeText.get(feePolicy, "listing-failed", feePh));
+
+                            return true;
+                        }
+
+                        if (listFee > 0) {
+                            final String w = player.getWorld().getName();
+                            this.fees.sink(feePolicy, w, listFee);
+                            this.fees.log("listing", player.getName(), listFee, price, w, this.fees.sinkName(feePolicy));
+                            player.sendMessage(FeeText.get(feePolicy, "listing-charged", feePh));
+                        }
 
                         this.plugin.getServer().getPluginManager().callEvent(new AuctionListEvent(player, type, stack, price));
 

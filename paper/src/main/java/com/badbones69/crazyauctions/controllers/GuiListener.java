@@ -13,6 +13,9 @@ import com.badbones69.crazyauctions.api.events.AuctionBuyEvent;
 import com.badbones69.crazyauctions.api.events.AuctionCancelledEvent;
 import com.badbones69.crazyauctions.api.events.AuctionNewBidEvent;
 import com.badbones69.crazyauctions.currency.VaultSupport;
+import com.badbones69.crazyauctions.fees.FeePolicy;
+import com.badbones69.crazyauctions.fees.FeeService;
+import com.badbones69.crazyauctions.fees.FeeText;
 import com.badbones69.crazyauctions.market.AuctionMarketManager;
 import com.ryderbelserion.vital.paper.util.scheduler.FoliaRunnable;
 import org.bukkit.Material;
@@ -1222,22 +1225,49 @@ public class GuiListener implements Listener {
 
                                     plugin.getServer().getPluginManager().callEvent(new AuctionBuyEvent(player, i, cost));
 
-                                    if (!support.removeMoney(player, cost)) {
-                                        playClick(player);
+                                    final FeeService fees = plugin.getFees();
+                                    final Player auctioneerNow = Methods.getPlayer(seller);
+                                    final String saleWorld = player.getWorld().getName();
+                                    long net;
 
-                                        player.closeInventory();
+                                    synchronized (FeeService.LOCK) {
+                                        if (!data.contains("Items." + ID)) {
+                                            player.closeInventory();
+                                            player.sendMessage(Messages.ITEM_DOESNT_EXIST.getMessage(player));
 
-                                        placeholders.put("%Money_Needed%", (cost - support.getMoney(player)) + "");
-                                        placeholders.put("%money_needed%", (cost - support.getMoney(player)) + "");
+                                            return;
+                                        }
 
-                                        player.sendMessage(Messages.NEED_MORE_MONEY.getMessage(player, placeholders));
+                                        if (!support.removeMoney(player, cost)) {
+                                            playClick(player);
 
-                                        return;
+                                            player.closeInventory();
+
+                                            placeholders.put("%Money_Needed%", (cost - support.getMoney(player)) + "");
+                                            placeholders.put("%money_needed%", (cost - support.getMoney(player)) + "");
+
+                                            player.sendMessage(Messages.NEED_MORE_MONEY.getMessage(player, placeholders));
+
+                                            return;
+                                        }
+
+                                        net = fees.settle(Methods.getOfflinePlayer(seller), auctioneerNow,
+                                                data.getBoolean("Items." + ID + ".FeeExempt"), saleWorld, cost,
+                                                data.getString("Items." + ID + ".SellerName", seller));
+
+                                        if (net < 0) {
+                                            support.addMoney(player, cost);
+                                            player.closeInventory();
+                                            player.sendMessage(FeeText.get(fees.policy(), "sale-failed", new HashMap<>()));
+
+                                            return;
+                                        }
+
+                                        data.set("Items." + ID, null);
+                                        Files.data.save();
                                     }
 
-                                    support.addMoney(Methods.getOfflinePlayer(seller), player.getWorld().getName(), cost);
-
-                                    String price = Methods.getPrice(ID, false);
+                                    String price = String.format(Locale.ENGLISH, "%d", cost);
 
                                     placeholders.put("%Price%", price);
                                     placeholders.put("%price%", price);
@@ -1251,13 +1281,20 @@ public class GuiListener implements Listener {
 
                                     if (auctioneer != null) {
                                         auctioneer.sendMessage(Messages.PLAYER_BOUGHT_ITEM.getMessage(player, placeholders));
+
+                                        if (net != cost) {
+                                            final FeePolicy fp = fees.policy();
+                                            final Map<String, String> fph = new HashMap<>();
+                                            fph.put("%pct%", String.valueOf(fp.commissionPercent));
+                                            fph.put("%fee%", String.valueOf(cost - net));
+                                            fph.put("%net%", String.valueOf(net));
+                                            auctioneer.sendMessage(FeeText.get(fp, "sold-net", fph));
+                                        }
+
                                         playSoldSound(auctioneer);
                                     }
 
                                     player.getInventory().addItem(i);
-
-                                    data.set("Items." + ID, null);
-                                    Files.data.save();
 
                                     playClick(player);
 

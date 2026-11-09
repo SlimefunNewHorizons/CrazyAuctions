@@ -7,6 +7,17 @@ Settings:
   Bidding-On-Item: '&8You Are Bidding On This Item.' #Name of the Bidding GUI.
   Categories: '&8Categories' #Name of the Category GUI.
   Sell-Time: 2d #The time that each item will sell for.
+  Fees: #Tasa de publicacion + comision de venta (cobradas por Vault en la modalidad del jugador).
+    Enabled: true
+    Commission-Percent: 5.0 #% sobre el precio final, se descuenta al vendedor.
+    Listing-Percent: 1.0 #% del precio pedido, cobrado al listar (no reembolsable).
+    Listing-Min: 50 #Minimo de la tasa de publicacion.
+    Listing-Max: 0 #Tope de la tasa (0 = sin tope).
+    Sink: destroy #destroy = el dinero se destruye; bank = va a Bank-Player.
+    Bank-Player: '' #Cuenta Vault (nombre) que recibe lo cobrado si Sink: bank.
+    Confirm-Listing: true #Pide repetir /ah sell|bid en 30 s tras mostrar el coste.
+    Language: es #es | en. Se puede sobreescribir en messages.yml -> Messages.Fees.<clave>.
+    #Permiso de exencion: crazyauctions.fee.exempt (staff/ultragod). Log: plugins/CrazyAuctions/fees.log
   Bid-Time: 2m 30s #Time for each item that is biddable.
   Full-Expire-Time: 10d #The full time the item is in the crazy auctions.
   Bid-Winner-Time: 20d #The time the winner of a bid has to claim their prize.

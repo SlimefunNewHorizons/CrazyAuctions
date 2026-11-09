@@ -150,6 +150,12 @@ public class CrazyAuctions extends Vital {
         if (this.crazyManager != null) this.crazyManager.unload();
     }
 
+    private final com.badbones69.crazyauctions.fees.FeeService fees = new com.badbones69.crazyauctions.fees.FeeService();
+
+    public final com.badbones69.crazyauctions.fees.FeeService getFees() {
+        return this.fees;
+    }
+
     public final VaultSupport getSupport() {
         return this.support;
     }
